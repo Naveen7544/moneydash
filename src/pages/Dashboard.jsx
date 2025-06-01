@@ -30,7 +30,7 @@ export default function Dashboard() {
       </p>
 
       {loading && <p className="text-slate-400">Loading...</p>}
-      {/* {error && <p className="text-red-500">{error}</p>} */}
+      {error && <p className="text-red-500">{error}</p>}
       <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
         {articles.map((article, idx) => (
           <NewsCard key={idx} article={article} />
