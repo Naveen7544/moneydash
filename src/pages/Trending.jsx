@@ -43,9 +43,11 @@ export default function Trending() {
 useEffect(() => {
   const fetchMicrolinkSnapshot = async (url) => {
     try {
-      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`);
-      const result = await response.json();
-      return result?.data?.screenshot?.url || null;
+      const res = await fetch(
+        `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`
+      );
+      const json = await res.json();
+      return json?.data?.screenshot?.url || null;
     } catch (error) {
       console.error("Microlink snapshot error:", error);
       return null;
@@ -55,7 +57,9 @@ useEffect(() => {
   const fetchNews = async () => {
     const rssUrl =
       "https://news.google.com/rss/search?q=stock+market+india&hl=en-IN&gl=IN&ceid=IN:en";
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
+      rssUrl
+    )}`;
 
     try {
       const response = await fetch(apiUrl);
@@ -82,7 +86,8 @@ useEffect(() => {
             url: item.link,
             publishedAt: item.pubDate,
             description:
-              item.description?.replace(/<[^>]+>/g, "") || "No description available.",
+              item.description?.replace(/<[^>]+>/g, "") ||
+              "No description available.",
             image,
             source: { name: "Google News" },
           };
