@@ -40,61 +40,67 @@ export default function Trending() {
     return null;
   };
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      const rssUrl =
-        "https://news.google.com/rss/search?q=stock+market+india&hl=en-IN&gl=IN&ceid=IN:en";
-      const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
-        rssUrl
-      )}`;
+useEffect(() => {
+  const fetchMicrolinkSnapshot = async (url) => {
+    try {
+      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`);
+      const result = await response.json();
+      return result?.data?.screenshot?.url || null;
+    } catch (error) {
+      console.error("Microlink snapshot error:", error);
+      return null;
+    }
+  };
 
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error("Network response was not ok");
+  const fetchNews = async () => {
+    const rssUrl =
+      "https://news.google.com/rss/search?q=stock+market+india&hl=en-IN&gl=IN&ceid=IN:en";
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
-        const data = await response.json();
-        if (data.status !== "ok") throw new Error(data.message || "API error");
+    try {
+      const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Network response was not ok");
 
-        // Process articles with possible Microlink screenshots fallback
-        const formattedArticles = await Promise.all(
-          data.items.slice(0, 10).map(async (item) => {
-            // Try normal thumbnail sources
-            let image =
-              item.thumbnail?.trim() ||
-              item.enclosure?.link?.trim() ||
-              extractImageFromHTML(item.description) ||
-              extractImageFromHTML(item.content);
+      const data = await response.json();
+      if (data.status !== "ok") throw new Error(data.message || "API error");
 
-            // If no image found, fetch Microlink screenshot URL
-            if (!image) {
-              const snapshotUrl = await fetchMicrolinkSnapshot(item.link);
-              image = snapshotUrl || dummyImg;
-            }
+      const formattedArticles = await Promise.all(
+        data.items.slice(0, 10).map(async (item) => {
+          let image =
+            item.thumbnail?.trim() ||
+            item.enclosure?.link?.trim() ||
+            extractImageFromHTML(item.description) ||
+            extractImageFromHTML(item.content);
 
-            return {
-              title: item.title,
-              url: item.link,
-              publishedAt: item.pubDate,
-              description:
-                item.description?.replace(/<[^>]+>/g, "") ||
-                "No description available.",
-              image,
-              source: { name: "Google News" },
-            };
-          })
-        );
+          if (!image) {
+            const snapshotUrl = await fetchMicrolinkSnapshot(item.link);
+            image = snapshotUrl || dummyImg;
+          }
 
-        setArticles(formattedArticles);
-        setLoading(false);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setError(err.message);
-        setLoading(false);
-      }
-    };
+          return {
+            title: item.title,
+            url: item.link,
+            publishedAt: item.pubDate,
+            description:
+              item.description?.replace(/<[^>]+>/g, "") || "No description available.",
+            image,
+            source: { name: "Google News" },
+          };
+        })
+      );
 
-    fetchNews();
-  }, []);
+      setArticles(formattedArticles);
+      setLoading(false);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  fetchNews();
+}, []);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-black text-white p-2">
